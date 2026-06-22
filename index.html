@@ -209,6 +209,36 @@
             transform: none;
         }
 
+        /* SECONDARY NAVIGATION BUTTON (GITHUB EXPLORER) */
+        .btn-explorer {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #111111;
+            background-color: #00d2ff;
+            border: none;
+            border-bottom: 4px solid #008eb3;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.1s ease;
+        }
+
+        .btn-explorer:hover {
+            background-color: #33dbff;
+            border-bottom-width: 4px;
+        }
+
+        .btn-explorer:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+
         /* MONITOR STATUS CONSOLE */
         #statusConsole {
             margin-top: 25px;
@@ -247,13 +277,11 @@
 
 <div class="industrial-panel">
     
-    <!-- HEADER LOGO INDUSTRIAL -->
     <div class="logo-container">
         <div class="logo-text">nseUpload<span class="logo-dot">.</span></div>
         <div class="subtitle">[ TERMINAL TRANSMISI REPOSITORI ]</div>
     </div>
 
-    <!-- KREDENSIAL METER -->
     <div class="control-group">
         <label for="githubToken">> GITHUB ACCESS TOKEN</label>
         <input type="password" id="githubToken" placeholder="MASUKKAN TOKEN API...">
@@ -274,7 +302,6 @@
         <input type="text" id="commitMessage" value="SYSTEM_UPLOAD: TRANSMISI DATA DILAKUKAN">
     </div>
 
-    <!-- TRANSMISSION MODULE (UPLOAD BOX) -->
     <label>> MUAT ELEMEN DATA (UPLOAD)</label>
     <div class="upload-zone">
         <div class="upload-box" id="dropBox">
@@ -284,11 +311,11 @@
         <input type="file" id="fileInput">
     </div>
 
-    <!-- ACTION INITIATION -->
     <button type="button" id="submitBtn" class="btn-submit" disabled>EKSEKUSI DATA (SUBMIT)</button>
 
-    <!-- STATUS CONSOLE MONITOR -->
     <div id="statusConsole"></div>
+
+    <a href="https://nvze.github.io/files/github_explorer.html" target="_blank" class="btn-explorer">Buka GitHub Explorer //</a>
 </div>
 
 <script>
