@@ -3,18 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub File Uploader</title>
+    <title>nseUpload - Industrial File Engine</title>
     <style>
+        /* ==========================================================================
+           INDUSTRIAL REGIME STYLE - RAW, BRUTALIST & HIGH-CONTRAST
+           ========================================================================== */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Courier New', Courier, monospace, sans-serif;
         }
 
         body {
-            background-color: #f6f8fa;
-            color: #24292f;
+            background-color: #1a1a1a;
+            /* Pola latar belakang garis-garis mesh baja industrial */
+            background-image: linear-gradient(335deg, #141414 23px, transparent 23px),
+                              linear-gradient(155deg, #141414 23px, transparent 23px),
+                              linear-gradient(335deg, #141414 23px, transparent 23px),
+                              linear-gradient(155deg, #141414 23px, transparent 23px);
+            background-size: 58px 58px;
+            background-position: 0px 2px, 4px 35px, 29px 31px, 34px 6px;
+            color: #e0e0e0;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -22,84 +32,125 @@
             padding: 20px;
         }
 
-        .container {
-            background-color: #ffffff;
-            border: 1px solid #d0d7de;
-            border-radius: 8px;
+        .industrial-panel {
+            background-color: #2b2b2b;
+            border: 4px solid #3d3d3d;
+            border-top: 6px solid #e67e22; /* Aksen warna karat / oranye industrial */
+            border-radius: 0px; /* Industrial bersifat kaku & angular */
             width: 100%;
-            max-width: 540px;
-            padding: 32px;
-            box-shadow: 0 4px 12px rgba(140, 149, 159, 0.15);
+            max-width: 560px;
+            padding: 35px;
+            box-shadow: 10px 10px 0px #111111;
+            position: relative;
         }
 
-        h2 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 8px;
+        /* Rivet/Baut Dekorasi Sudut Panel */
+        .industrial-panel::before, .industrial-panel::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #555;
+            border-radius: 50%;
+            box-shadow: inset -1px -1px 2px #000, 1px 1px 1px #fff;
+        }
+        .industrial-panel::before { top: 10px; left: 10px; }
+        .industrial-panel::after { top: 10px; right: 10px; }
+
+        /* LOGO nseUpload CUSTOM */
+        .logo-container {
             text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px dashed #444;
         }
 
-        p.subtitle {
-            color: #57606a;
-            font-size: 14px;
-            text-align: center;
-            margin-bottom: 24px;
+        .logo-text {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: -1px;
+            color: #ffffff;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 0px #111;
+            display: inline-block;
         }
 
-        .form-group {
+        .logo-dot {
+            color: #00d2ff; /* Warna biru muda menyala */
+            font-size: 36px;
+            line-height: 0;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.8);
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 5px;
+        }
+
+        /* FORM CONTROLS */
+        .control-group {
             margin-bottom: 20px;
         }
 
         label {
             display: block;
-            font-weight: 600;
+            font-weight: bold;
+            font-size: 12px;
+            color: #aaaaaa;
+            text-transform: uppercase;
             margin-bottom: 6px;
-            font-size: 14px;
+            letter-spacing: 1px;
         }
 
         input[type="text"],
         input[type="password"] {
             width: 100%;
-            padding: 8px 12px;
+            padding: 10px 12px;
             font-size: 14px;
-            border: 1px solid #d0d7de;
-            border-radius: 6px;
-            background-color: #f6f8fa;
-            transition: border-color 0.2s, background-color 0.2s;
+            background-color: #1e1e1e;
+            border: 2px solid #444;
+            color: #00ff66; /* Warna font monitor terminal jadul */
+            border-radius: 0px;
+            transition: all 0.2s ease;
         }
 
         input[type="text"]:focus,
         input[type="password"]:focus {
-            border-color: #0969da;
-            background-color: #ffffff;
+            border-color: #e67e22;
+            background-color: #151515;
             outline: none;
-            box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3);
+            box-shadow: 0 0 8px rgba(230, 126, 34, 0.5);
         }
 
-        /* Custom File Input Container */
-        .file-upload-wrapper {
+        /* INDUSTRIAL UPLOAD ZONE (Tombol Upload Terintegrasi) */
+        .upload-zone {
             position: relative;
-            margin-bottom: 24px;
+            margin-bottom: 25px;
         }
 
-        .file-select-box {
-            border: 2px dashed #0969da;
-            padding: 24px;
-            border-radius: 6px;
+        .upload-box {
+            border: 3px dashed #e67e22;
+            padding: 30px 20px;
             text-align: center;
-            background-color: #f0f7ff;
+            background-color: #222222;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s ease;
         }
 
-        .file-select-box:hover {
-            background-color: #e2efff;
+        .upload-box:hover {
+            background-color: #1e1e1e;
+            border-color: #f39c12;
         }
 
-        .file-select-box p {
-            font-size: 14px;
-            color: #0969da;
-            font-weight: 500;
+        .upload-box p {
+            font-size: 13px;
+            color: #e67e22;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         #fileInput {
@@ -112,190 +163,211 @@
             cursor: pointer;
         }
 
-        .file-info {
-            margin-top: 8px;
-            font-size: 13px;
-            color: #24292f;
-            font-weight: 600;
-            text-align: center;
+        .file-meta {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #00d2ff; /* Output info berwarna biru muda */
             word-break: break-all;
+            background-color: #1a1a1a;
+            padding: 8px;
+            border-left: 3px solid #00d2ff;
+            display: none;
         }
 
-        /* Action Buttons */
-        .btn {
+        /* SUBMIT BUTTON - HEAVY DUTY MACHINERY STYLE */
+        .btn-submit {
             display: block;
             width: 100%;
-            padding: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #ffffff;
-            background-color: #2ea44f;
-            border: 1px solid rgba(27, 31, 36, 0.15);
-            border-radius: 6px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #111111;
+            background-color: #e67e22;
+            border: none;
+            border-bottom: 4px solid #d35400;
             cursor: pointer;
-            text-align: center;
-            transition: background-color 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.1s ease;
         }
 
-        .btn:hover {
-            background-color: #2c974b;
+        .btn-submit:hover {
+            background-color: #f39c12;
+            border-bottom-width: 4px;
         }
 
-        .btn:disabled {
-            background-color: #94d3a2;
+        .btn-submit:active {
+            transform: translateY(2px);
+            border-bottom-width: 2px;
+        }
+
+        .btn-submit:disabled {
+            background-color: #444444;
+            border-bottom: 4px solid #333333;
+            color: #777777;
             cursor: not-allowed;
+            transform: none;
         }
 
-        /* Status Messages */
-        #statusMessage {
-            margin-top: 20px;
+        /* MONITOR STATUS CONSOLE */
+        #statusConsole {
+            margin-top: 25px;
             padding: 12px;
-            border-radius: 6px;
-            font-size: 14px;
+            font-size: 12px;
             display: none;
-            line-height: 1.5;
+            border-left: 4px solid transparent;
+            text-transform: uppercase;
         }
 
-        .status-success {
-            background-color: #dafbe1;
-            border: 1px solid #cee9d5;
-            color: #1a7f37;
+        .console-success {
+            background-color: rgba(0, 255, 102, 0.1);
+            border-color: #00ff66;
+            color: #00ff66;
         }
 
-        .status-error {
-            background-color: #ffebe9;
-            border: 1px solid #ffcecb;
-            color: #cf222e;
+        .console-error {
+            background-color: rgba(255, 51, 51, 0.1);
+            border-color: #ff3333;
+            color: #ff3333;
         }
 
-        .status-loading {
-            background-color: #fff8c5;
-            border: 1px solid #f8e3a1;
-            color: #9a6700;
+        .console-loading {
+            background-color: rgba(230, 126, 34, 0.1);
+            border-color: #e67e22;
+            color: #e67e22;
+            animation: blinker 1.5s linear infinite;
+        }
+
+        @keyframes blinker {
+            50% { opacity: 0.5; }
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Upload ke GitHub Repo</h2>
-    <p class="subtitle">Unggah file apa saja langsung ke repository GitHub Anda via API</p>
-
-    <!-- Kredensial Form -->
-    <div class="form-group">
-        <label for="githubToken">GitHub Personal Access Token (PAT)</label>
-        <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+<div class="industrial-panel">
+    
+    <!-- HEADER LOGO INDUSTRIAL -->
+    <div class="logo-container">
+        <div class="logo-text">nseUpload<span class="logo-dot">.</span></div>
+        <div class="subtitle">[ TERMINAL TRANSMISI REPOSITORI ]</div>
     </div>
 
-    <div class="form-group">
-        <label for="username">Username GitHub</label>
-        <input type="text" id="username" placeholder="Contoh: nvze">
+    <!-- KREDENSIAL METER -->
+    <div class="control-group">
+        <label for="githubToken">> GITHUB ACCESS TOKEN</label>
+        <input type="password" id="githubToken" placeholder="MASUKKAN TOKEN API...">
     </div>
 
-    <div class="form-group">
-        <label for="repoName">Nama Repository</label>
-        <input type="text" id="repoName" placeholder="Contoh: files">
+    <div class="control-group">
+        <label for="username">> USERNAME REPO</label>
+        <input type="text" id="username" placeholder="USERNAME GITHUB...">
     </div>
 
-    <div class="form-group">
-        <label for="commitMessage">Pesan Commit (Opsional)</label>
-        <input type="text" id="commitMessage" placeholder="Upload file via web uploader" value="Upload file via web uploader">
+    <div class="control-group">
+        <label for="repoName">> NAMA TARGET REPOSITORI</label>
+        <input type="text" id="repoName" placeholder="NAMA REPO...">
     </div>
 
-    <!-- Upload Section -->
-    <label>Pilih File</label>
-    <div class="file-upload-wrapper">
-        <div class="file-select-box">
-            <p id="uploadPrompt">Klik di sini untuk memilih atau drag file Anda</p>
-            <div id="fileInfo" class="file-info"></div>
+    <div class="control-group">
+        <label for="commitMessage">> LOG PESAN COMMIT</label>
+        <input type="text" id="commitMessage" value="SYSTEM_UPLOAD: TRANSMISI DATA DILAKUKAN">
+    </div>
+
+    <!-- TRANSMISSION MODULE (UPLOAD BOX) -->
+    <label>> MUAT ELEMEN DATA (UPLOAD)</label>
+    <div class="upload-zone">
+        <div class="upload-box" id="dropBox">
+            <p id="uploadPrompt">// KLIK / SERET FILE UNTUK DIUNGGAH //</p>
+            <div id="fileMeta" class="file-meta"></div>
         </div>
         <input type="file" id="fileInput">
     </div>
 
-    <!-- Submit Button -->
-    <button type="button" id="submitBtn" class="btn" disabled>Submit ke GitHub</button>
+    <!-- ACTION INITIATION -->
+    <button type="button" id="submitBtn" class="btn-submit" disabled>EKSEKUSI DATA (SUBMIT)</button>
 
-    <!-- Status Tampilan -->
-    <div id="statusMessage"></div>
+    <!-- STATUS CONSOLE MONITOR -->
+    <div id="statusConsole"></div>
 </div>
 
 <script>
     const fileInput = document.getElementById('fileInput');
     const uploadPrompt = document.getElementById('uploadPrompt');
-    const fileInfo = document.getElementById('fileInfo');
+    const fileMeta = document.getElementById('fileMeta');
     const submitBtn = document.getElementById('submitBtn');
-    const statusMessage = document.getElementById('statusMessage');
+    const statusConsole = document.getElementById('statusConsole');
 
     let selectedFile = null;
 
-    // Listener saat file dipilih (Tombol Upload)
+    // Aksi ketika modul upload dipicu
     fileInput.addEventListener('change', function(e) {
         if (e.target.files.length > 0) {
             selectedFile = e.target.files[0];
-            uploadPrompt.style.display = 'none';
-            fileInfo.textContent = `File terpilih: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(2)} KB)`;
+            fileMeta.style.display = 'block';
+            fileMeta.textContent = `BERKAS SIAP: ${selectedFile.name.toUpperCase()} [${(selectedFile.size / 1024).toFixed(2)} KB]`;
             submitBtn.disabled = false;
-            showStatus('', ''); // Reset status
+            clearConsole();
         } else {
-            resetFileInput();
+            resetEngine();
         }
     });
 
-    function resetFileInput() {
+    function resetEngine() {
         selectedFile = null;
-        uploadPrompt.style.display = 'block';
-        fileInfo.textContent = '';
+        fileMeta.style.display = 'none';
+        fileMeta.textContent = '';
         submitBtn.disabled = true;
     }
 
-    function showStatus(text, type) {
-        if (!text) {
-            statusMessage.style.display = 'none';
-            return;
-        }
-        statusMessage.className = '';
-        statusMessage.style.display = 'block';
-        statusMessage.textContent = text;
-        
-        if (type === 'success') statusMessage.classList.add('status-success');
-        if (type === 'error') statusMessage.classList.add('status-error');
-        if (type === 'loading') statusMessage.classList.add('status-loading');
+    function clearConsole() {
+        statusConsole.style.display = 'none';
+        statusConsole.className = '';
     }
 
-    // Listener saat tombol submit ditekan
+    function writeConsole(text, mode) {
+        if (!text) {
+            clearConsole();
+            return;
+        }
+        statusConsole.className = '';
+        statusConsole.style.display = 'block';
+        statusConsole.textContent = `>>> STATUS: ${text}`;
+        
+        if (mode === 'success') statusConsole.classList.add('console-success');
+        if (mode === 'error') statusConsole.classList.add('console-error');
+        if (mode === 'loading') statusConsole.classList.add('console-loading');
+    }
+
+    // Eksekusi pengiriman data ke GitHub
     submitBtn.addEventListener('click', async function() {
         const token = document.getElementById('githubToken').value.trim();
         const username = document.getElementById('username').value.trim();
         const repo = document.getElementById('repoName').value.trim();
-        const commitMsg = document.getElementById('commitMessage').value.trim() || 'Upload file via web uploader';
+        const commitMsg = document.getElementById('commitMessage').value.trim() || 'SYSTEM_UPLOAD: TRANSMISI DATA DILAKUKAN';
 
         if (!token || !username || !repo) {
-            showStatus('Harap isi semua kolom kredensial (Token, Username, dan Nama Repo)!', 'error');
+            writeConsole('ERROR! KREDENSIAL ENGINE HARUS DIISI LENGKAP!', 'error');
             return;
         }
 
         if (!selectedFile) {
-            showStatus('Harap pilih file terlebih dahulu!', 'error');
+            writeConsole('ERROR! ELEMEN DATA KOSONG!', 'error');
             return;
         }
 
-        showStatus('Sedang memproses dan mengunggah file...', 'loading');
+        writeConsole('MENGONVERSI DATA & TRANSMISI SEDANG BERJALAN...', 'loading');
         submitBtn.disabled = true;
 
-        // Membaca file dan mengonversinya ke Base64 (wajib untuk GitHub API)
         const reader = new FileReader();
         reader.readAsDataURL(selectedFile);
         
         reader.onload = async function () {
-            // Mengambil data murni base64 dari DataURL
             const base64Content = reader.result.split(',')[1];
-            const path = selectedFile.name; // Menyimpan di root repo dengan nama asli file
-            
-            // URL GitHub API untuk isi konten file
+            const path = selectedFile.name; 
             const url = `https://api.github.com/repos/${username}/${repo}/contents/${encodeURIComponent(path)}`;
 
             try {
-                // 1. Cek apakah file sudah ada di repo untuk mendapatkan SHA (jika ingin overwrite/update)
                 let sha = null;
                 const checkResponse = await fetch(url, {
                     method: 'GET',
@@ -307,16 +379,15 @@
 
                 if (checkResponse.ok) {
                     const fileData = await checkResponse.json();
-                    sha = fileData.sha; // Ambil SHA jika file sudah ada
+                    sha = fileData.sha; 
                 }
 
-                // 2. Lakukan request PUT untuk membuat atau memperbarui file
                 const bodyData = {
                     message: commitMsg,
                     content: base64Content
                 };
                 if (sha) {
-                    bodyData.sha = sha; // Menyertakan SHA jika prosesnya berupa pembaruan file
+                    bodyData.sha = sha;
                 }
 
                 const uploadResponse = await fetch(url, {
@@ -330,22 +401,22 @@
                 });
 
                 if (uploadResponse.ok) {
-                    showStatus(`Berhasil! File "${selectedFile.name}" telah diunggah ke repository "${repo}".`, 'success');
-                    resetFileInput();
+                    writeConsole(`TRANSMISI BERHASIL! BERKAS "${selectedFile.name.toUpperCase()}" SUKSES TERKIRIM KE REPO [${repo.toUpperCase()}].`, 'success');
+                    resetEngine();
                 } else {
                     const errorData = await uploadResponse.json();
-                    showStatus(`Gagal mengunggah: ${errorData.message || uploadResponse.statusText}`, 'error');
+                    writeConsole(`TRANSMISI GAGAL: ${errorData.message.toUpperCase() || 'UNKNOWN ERROR'}`, 'error');
                     submitBtn.disabled = false;
                 }
 
             } catch (error) {
-                showStatus(`Terjadi kesalahan jaringan atau API: ${error.message}`, 'error');
+                writeConsole(`KESALAHAN JARINGAN/API: ${error.message.toUpperCase()}`, 'error');
                 submitBtn.disabled = false;
             }
         };
 
-        reader.onerror = function (error) {
-            showStatus('Gagal membaca file lokal.', 'error');
+        reader.onerror = function () {
+            writeConsole('GAGAL MEMBACA ELEMEN DATA LOKAL.', 'error');
             submitBtn.disabled = false;
         };
     });
