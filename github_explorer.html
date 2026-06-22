@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Repository File Explorer & Uploader</title>
+    <title>GitHub Repository Manager (Explorer, Download, Upload, Delete)</title>
     <style>
         :root {
             --bg-color: #f6f8fa;
@@ -17,6 +17,8 @@
             --file-color: #57606a;
             --success-color: #1a7f37;
             --success-hover: #116629;
+            --danger-color: #cf222e;
+            --danger-hover: #a61018;
         }
 
         * {
@@ -34,7 +36,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 950px;
             margin: 0 auto;
             background-color: var(--container-bg);
             border: 1px solid var(--border-color);
@@ -111,7 +113,6 @@
             background-color: var(--primary-hover);
         }
 
-        /* Upload Section Styling */
         .upload-panel {
             margin-top: 1rem;
             margin-bottom: 1.5rem;
@@ -235,6 +236,12 @@
             text-decoration: underline;
         }
 
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
         .btn-download {
             background-color: #24292f;
             font-size: 0.75rem;
@@ -248,16 +255,30 @@
         .btn-download:hover {
             background-color: #57606a;
         }
+
+        .btn-delete {
+            background-color: var(--danger-color);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-delete:hover {
+            background-color: var(--danger-hover);
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>GitHub Repo Explorer, Downloader & Uploader</h1>
+    <h1>GitHub Repo Explorer, Downloader, Uploader & Delete</h1>
 
     <div class="config-panel">
         <div class="form-group full-width">
-            <label for="token">GitHub Personal Access Token (Wajib untuk Upload & Repo Private)</label>
+            <label for="token">GitHub Personal Access Token (Wajib untuk Upload & Hapus File)</label>
             <input type="password" id="token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
         </div>
         <div class="form-group">
@@ -329,7 +350,7 @@
             const data = await response.json();
             statusDiv.style.display = 'none';
             browserContainer.style.display = 'block';
-            uploadPanel.style.display = 'flex'; // Tampilkan panel upload
+            uploadPanel.style.display = 'flex';
             
             renderBreadcrumb();
             renderFileList(data);
@@ -388,9 +409,7 @@
             container.appendChild(upRow);
         }
 
-        // Jika data berupa objek tunggal (bukan array), bungkus jadi array
         const normalizedItems = Array.isArray(items) ? items : [items];
-
         normalizedItems.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
 
         normalizedItems.forEach(item => {
@@ -398,12 +417,22 @@
             li.className = 'file-item';
             const isDir = item.type === 'dir';
             
+            let buttonsHtml = '';
+            if (!isDir) {
+                buttonsHtml = `
+                    <div class="action-buttons">
+                        <button class="btn-download" onclick="downloadFile('${item.url}', '${item.name}')">Download</button>
+                        <button class="btn-delete" onclick="deleteFile('${item.path}', '${item.sha}', '${item.name}')">Hapus</button>
+                    </div>
+                `;
+            }
+            
             li.innerHTML = `
                 <div class="file-info">
                     <span>${isDir ? '📁' : '📄'}</span>
                     <span class="file-name ${isDir ? 'dir-link' : ''}">${item.name}</span>
                 </div>
-                ${isDir ? '' : `<button class="btn-download" onclick="downloadFile('${item.url}', '${item.name}')">Download</button>`}
+                ${buttonsHtml}
             `;
 
             if (isDir) {
@@ -450,7 +479,6 @@
         }
     }
 
-    // ================= FUNGSI BARU: UPLOAD FILE =================
     async function uploadFile() {
         const fileInput = document.getElementById('file-input');
         let commitMessage = document.getElementById('commit-message').value.trim();
@@ -465,19 +493,14 @@
         }
 
         const file = fileInput.files[0];
-        if (!commitMessage) {
-            commitMessage = `Upload ${file.name} via GitHub Web Explorer`;
-        }
+        if (!commitMessage) { commitMessage = `Upload ${file.name} via GitHub Web Manager`; }
 
         showStatus(`Sedang memproses dan mengunggah ${file.name}...`, 'loading');
 
-        // Membaca file dan mengubahnya menjadi format Base64 (Syarat API GitHub)
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = async function () {
-            const base64Content = reader.result.split(',')[1]; // Ambil raw base64 string
-            
-            // Tentukan jalur file tujuan (Path)
+            const base64Content = reader.result.split(',')[1];
             const targetPath = currentPath ? `${currentPath}/${file.name}` : file.name;
             const url = `https://api.github.com/repos/${cachedOwner}/${cachedRepo}/contents/${targetPath}`;
 
@@ -487,26 +510,17 @@
                 'Content-Type': 'application/json'
             };
 
-            // Cek terlebih dahulu apakah file sudah ada, jika ada ambil SHA-nya untuk ditimpa (update)
             let sha = null;
             try {
                 const checkResponse = await fetch(url, { headers });
                 if (checkResponse.ok) {
                     const existingFileData = await checkResponse.json();
-                    sha = existingFileData.sha; // Ambil SHA jika file duplikat/akan ditimpa
+                    sha = existingFileData.sha;
                 }
-            } catch (e) {
-                // Biarkan sha = null jika file baru
-            }
+            } catch (e) {}
 
-            // Kerangka Request Body untuk API GitHub
-            const bodyData = {
-                message: commitMessage,
-                content: base64Content
-            };
-            if (sha) {
-                bodyData.sha = sha; // Menyertakan SHA jika prosesnya adalah 'replace/update' file
-            }
+            const bodyData = { message: commitMessage, content: base64Content };
+            if (sha) { bodyData.sha = sha; }
 
             try {
                 const uploadResponse = await fetch(url, {
@@ -517,11 +531,9 @@
 
                 if (uploadResponse.ok) {
                     showStatus(`Berhasil! File "${file.name}" telah diunggah.`, 'success');
-                    fileInput.value = ''; // Reset input file
-                    document.getElementById('commit-message').value = ''; // Reset teks commit
-                    
-                    // Segarkan kembali daftar file di folder aktif saat ini
-                    setTimeout(() => { loadRepository(currentPath); }, 1500);
+                    fileInput.value = '';
+                    document.getElementById('commit-message').value = '';
+                    setTimeout(() => { loadRepository(currentPath); }, 1000);
                 } else {
                     const errData = await uploadResponse.json();
                     throw new Error(errData.message || 'Respons API bermasalah.');
@@ -530,10 +542,53 @@
                 showStatus(`Gagal Mengunggah: ${error.message}`, 'error');
             }
         };
+    }
 
-        reader.onerror = function (error) {
-            showStatus('Gagal membaca file lokal komputer.', 'error');
+    // ================= FUNGSI BARU: HAPUS FILE =================
+    async function deleteFile(filePath, fileSha, filename) {
+        if (!cachedToken) {
+            alert('Gagal: Token GitHub wajib diisi untuk menghapus file!');
+            return;
+        }
+
+        // Konfirmasi ke pengguna sebelum menghapus demi keamanan data
+        const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus file "${filename}"?\nTindakan ini tidak dapat dibatalkan.`);
+        if (!konfirmasi) return;
+
+        showStatus(`Sedang menghapus file ${filename}...`, 'loading');
+
+        const url = `https://api.github.com/repos/${cachedOwner}/${cachedRepo}/contents/${filePath}`;
+        const headers = {
+            'Authorization': `token ${cachedToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
         };
+
+        // GitHub API mengharuskan penyertaan SHA file dan Pesan Commit untuk proses penghapusan (DELETE)
+        const bodyData = {
+            message: `Menghapus file ${filename} via Web App`,
+            sha: fileSha
+        };
+
+        try {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: headers,
+                body: JSON.stringify(bodyData)
+            });
+
+            if (response.ok) {
+                showStatus(`Berhasil! File "${filename}" telah dihapus dari repository.`, 'success');
+                // Refresh daftar file setelah 1 detik
+                setTimeout(() => { loadRepository(currentPath); }, 1000);
+            } else {
+                const errData = await response.json();
+                throw new Error(errData.message || 'Gagal menghapus file dari GitHub.');
+            }
+        } catch (error) {
+            showStatus(`Gagal Menghapus Berkas: ${error.message}`, 'error');
+            alert('Gagal Menghapus Berkas: ' + error.message);
+        }
     }
 </script>
 
