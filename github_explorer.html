@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Repository File Downloader</title>
+    <title>GitHub Repository File Downloader (Fixed)</title>
     <style>
         :root {
             --bg-color: #f6f8fa;
@@ -15,14 +15,13 @@
             --accent-color: #57606a;
             --folder-color: #54aeff;
             --file-color: #57606a;
-            --success-color: #1a7f37;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
         }
 
         body {
@@ -82,7 +81,6 @@
         label {
             font-size: 0.875rem;
             font-weight: 600;
-            color: var(--text-color);
         }
 
         input {
@@ -91,7 +89,6 @@
             border: 1px solid var(--border-color);
             border-radius: 6px;
             outline: none;
-            background-color: #fff;
         }
 
         input:focus {
@@ -109,23 +106,10 @@
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
         }
 
         button:hover {
             background-color: var(--primary-hover);
-        }
-
-        button:disabled {
-            background-color: #94d3a2;
-            cursor: not-allowed;
-        }
-
-        .actions {
-            margin-top: 0.5rem;
         }
 
         .status-message {
@@ -163,20 +147,6 @@
             border-bottom: 1px solid var(--border-color);
             font-size: 0.875rem;
             font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .breadcrumb {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            flex-wrap: wrap;
-        }
-
-        .breadcrumb span {
-            color: var(--accent-color);
         }
 
         .breadcrumb a {
@@ -203,10 +173,6 @@
             font-size: 0.875rem;
         }
 
-        .file-item:last-child {
-            border-bottom: none;
-        }
-
         .file-item:hover {
             background-color: #f6f8fa;
         }
@@ -223,8 +189,6 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            color: var(--text-color);
-            text-decoration: none;
         }
 
         .file-name.dir-link {
@@ -240,7 +204,6 @@
         .file-size {
             font-size: 0.75rem;
             color: var(--accent-color);
-            white-space: nowrap;
         }
 
         .btn-download {
@@ -248,6 +211,8 @@
             font-size: 0.75rem;
             padding: 0.25rem 0.5rem;
             border-radius: 4px;
+            color: white;
+            border: none;
         }
 
         .btn-download:hover {
@@ -264,25 +229,22 @@
 <body>
 
 <div class="container">
-    <h1>
-        <svg class="icon" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 110-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 011-1h8zM5 12.25v3.25a.25.25 0 00.4.2l1.45-1.087a.25.25 0 01.3 0L8.6 15.7a.25.25 0 00.4-.2v-3.25a.25.25 0 00-.25-.25h-3.5a.25.25 0 00-.25.25z"></path></svg>
-        GitHub Repo Explorer & Downloader
-    </h1>
+    <h1>GitHub Repo Explorer & Downloader</h1>
 
     <div class="config-panel">
         <div class="form-group full-width">
-            <label for="token">GitHub Personal Access Token (PAT)</label>
+            <label for="token">GitHub Token (Wajib jika Repo Private / menghindari Rate Limit)</label>
             <input type="password" id="token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
         </div>
         <div class="form-group">
-            <label for="username">Username / Owner</label>
+            <label for="username">Username / Owner Repo</label>
             <input type="text" id="username" placeholder="Contoh: octocat">
         </div>
         <div class="form-group">
             <label for="repo">Nama Repository</label>
             <input type="text" id="repo" placeholder="Contoh: Hello-World">
         </div>
-        <div class="form-group full-width actions">
+        <div class="form-group full-width">
             <button id="btn-load" onclick="loadRepository()">Muat Daftar File</button>
         </div>
     </div>
@@ -291,14 +253,9 @@
 
     <div id="browser-container" style="display: none;" class="repo-browser">
         <div class="repo-header">
-            <div class="breadcrumb" id="breadcrumb">
-                <!-- Breadcrumb dinamis di sini -->
-            </div>
-            <div id="repo-meta" class="file-size"></div>
+            <div class="breadcrumb" id="breadcrumb"></div>
         </div>
-        <ul class="file-list" id="file-list-container">
-            <!-- File items dinamis di sini -->
-        </ul>
+        <ul class="file-list" id="file-list-container"></ul>
     </div>
 </div>
 
@@ -320,7 +277,6 @@
             return;
         }
 
-        // Simpan cache informasi kredensial
         cachedToken = token;
         cachedOwner = owner;
         cachedRepo = repo;
@@ -328,37 +284,20 @@
 
         showStatus('Sedang mengambil data dari GitHub...', 'loading');
         
-        // Memanfaatkan REST API GitHub untuk List Contents
         let url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-        
-        const headers = {
-            'Accept': 'application/vnd.github.v3+json'
-        };
-        
-        if (token) {
-            headers['Authorization'] = `token ${token}`;
-        }
+        const headers = { 'Accept': 'application/vnd.github.v3+json' };
+        if (token) { headers['Authorization'] = `token ${token}`; }
 
         try {
             const response = await fetch(url, { headers });
+            if (!response.ok) throw new Error(`Gagal memuat data (${response.status}). Periksa nama repo/token.`);
             
-            if (!response.ok) {
-                if (response.status === 404) {
-                    throw new Error('Repository atau Path tidak ditemukan. Pastikan nama sesuai dan Token memiliki hak akses jika repo private.');
-                } else if (response.status === 401) {
-                    throw new Error('Token tidak valid atau tidak diizinkan.');
-                } else {
-                    throw new Error(`Error HTTP: ${response.status}`);
-                }
-            }
-
             const data = await response.json();
             statusDiv.style.display = 'none';
             browserContainer.style.display = 'block';
             
             renderBreadcrumb();
             renderFileList(data);
-
         } catch (error) {
             showStatus(error.message, 'error');
             browserContainer.style.display = 'none';
@@ -371,19 +310,9 @@
         statusDiv.innerText = message;
     }
 
-    function formatBytes(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
     function renderBreadcrumb() {
         const breadcrumb = document.getElementById('breadcrumb');
         breadcrumb.innerHTML = '';
-
-        // Root link
         const rootLink = document.createElement('a');
         rootLink.innerText = cachedRepo;
         rootLink.onclick = () => loadRepository('');
@@ -392,18 +321,13 @@
         if (currentPath) {
             const parts = currentPath.split('/');
             let accumulatedPath = '';
-            
             parts.forEach((part, index) => {
-                const separator = document.createElement('span');
-                separator.innerText = ' / ';
-                breadcrumb.appendChild(separator);
-
+                breadcrumb.appendChild(document.createTextNode(' / '));
                 accumulatedPath += (index === 0 ? part : '/' + part);
-                
                 if (index === parts.length - 1) {
-                    const currentSpan = document.createElement('span');
-                    currentSpan.innerText = part;
-                    breadcrumb.appendChild(currentSpan);
+                    const span = document.createElement('span');
+                    span.innerText = part;
+                    breadcrumb.appendChild(span);
                 } else {
                     const dirLink = document.createElement('a');
                     dirLink.innerText = part;
@@ -419,92 +343,66 @@
         const container = document.getElementById('file-list-container');
         container.innerHTML = '';
 
-        // Urutkan agar Folder (dir) muncul di atas File (file)
-        items.sort((a, b) => {
-            if (a.type === b.type) return a.name.localeCompare(b.name);
-            return a.type === 'dir' ? -1 : 1;
-        });
-
-        // Tambahkan opsi tombol 'Kembali ke Atas / Back' jika sedang di dalam sub-folder
         if (currentPath) {
             const upRow = document.createElement('li');
             upRow.className = 'file-item';
-            
             const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
-            
-            upRow.innerHTML = `
-                <div class="file-info">
-                    <svg class="icon" style="color: var(--accent-color);" viewBox="0 0 16 16" version="1.1" width="16" height="16"><path fill="currentColor" d="M9.78 12.78a.75.75 0 01-1.06 0L4.47 8.53a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L6.06 8l3.72 3.72a.75.75 0 010 1.06z"></path></svg>
-                    <span class="file-name dir-link">.. (Kembali)</span>
-                </div>
-            `;
+            upRow.innerHTML = `<div class="file-info"><span class="file-name dir-link">📁 .. (Kembali)</span></div>`;
             upRow.querySelector('.dir-link').onclick = () => loadRepository(parentPath);
             container.appendChild(upRow);
         }
 
-        if (items.length === 0) {
-            const emptyRow = document.createElement('li');
-            emptyRow.className = 'file-item';
-            emptyRow.innerHTML = '<div class="file-info" style="color: var(--accent-color); font-style: italic;">Folder ini kosong.</div>';
-            container.appendChild(emptyRow);
-            return;
-        }
+        items.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
 
         items.forEach(item => {
             const li = document.createElement('li');
             li.className = 'file-item';
-
             const isDir = item.type === 'dir';
             
-            // SVG Icons untuk Folder vs File
-            const iconSvg = isDir 
-                ? `<svg class="icon" style="color: var(--folder-color);" viewBox="0 0 16 16" version="1.1" width="16" height="16"><path fill="currentColor" d="M1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25v-8.5A1.75 1.75 0 0014.25 3H7.5a.25.25 0 01-.2-.1l-.9-1.2A1.75 1.75 0 004.975 1H1.75z"></path></svg>`
-                : `<svg class="icon" style="color: var(--file-color);" viewBox="0 0 16 16" version="1.1" width="16" height="16"><path fill="currentColor" d="M2 1.75C2 .784 2.784 0 3.75 0h6.586c.464 0 .909.184 1.237.513l3.414 3.414c.329.328.513.773.513 1.237v9.086A1.75 1.75 0 0113.75 16H3.75A1.75 1.75 0 012 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h10a.25.25 0 00.25-.25V6h-2.75A1.75 1.75 0 019.5 4.25V1.5H3.75zM11 1.884V4h2.116L11 1.884z"></path></svg>`;
-
-            const sizeText = isDir ? '' : `<span class="file-size">${formatBytes(item.size)}</span>`;
-            
-            // Tombol download hanya untuk file
-            let actionHtml = '';
-            if (!isDir) {
-                // Menggunakan item.download_url yang disediakan langsung oleh API GitHub untuk file mentah (raw)
-                actionHtml = `<button class="btn-download" onclick="downloadFile('${item.download_url}', '${item.name}')">Download</button>`;
-            }
-
             li.innerHTML = `
                 <div class="file-info">
-                    ${iconSvg}
-                    <span class="file-name ${isDir ? 'dir-link' : ''}" id="item-${item.sha}">${item.name}</span>
-                    ${sizeText}
+                    <span>${isDir ? '📁' : '📄'}</span>
+                    <span class="file-name ${isDir ? 'dir-link' : ''}">${item.name}</span>
                 </div>
-                ${actionHtml}
+                ${isDir ? '' : `<button class="btn-download" onclick="downloadFile('${item.url}', '${item.name}')">Download</button>`}
             `;
 
-            // Tambahkan event click handler jika baris berupa direktori
             if (isDir) {
                 li.querySelector('.dir-link').onclick = () => loadRepository(item.path);
             }
-
             container.appendChild(li);
         });
     }
 
-    // Fungsi download menggunakan Blob agar nama file yang terunduh sesuai aslinya (bukan hash atau random name)
-    async function downloadFile(url, filename) {
-        if (!url) {
-            alert('File ini tidak memiliki URL unduhan langsung (kemungkinan submodule atau tautan luar).');
-            return;
-        }
-
+    // Perbaikan utama: Mengambil data konten file via API endpoint langsung menggunakan Token untuk membongkar Base64 Blob
+    async function downloadFile(apiUrl, filename) {
         try {
-            const headers = {};
-            if (cachedToken) {
-                headers['Authorization'] = `token ${cachedToken}`;
+            const headers = { 'Accept': 'application/vnd.github.v3+json' };
+            if (cachedToken) { headers['Authorization'] = `token ${cachedToken}`; }
+
+            // 1. Ambil metadata file (termasuk konten dalam format base64 jika file < 12MB)
+            const response = await fetch(apiUrl, { headers });
+            if (!response.ok) throw new Error('Gagal menghubungi API GitHub.');
+            
+            const fileData = await response.json();
+            
+            // Periksa jika file terlalu besar untuk API Contents biasa (>12MB biasanya diarahkan ke Git LFS/Blob API)
+            if (!fileData.content && fileData.download_url) {
+                // Fallback menggunakan unduhan langsung jika tidak terikat enkripsi base64 API biasa
+                window.open(fileData.download_url, '_blank');
+                return;
             }
 
-            const response = await fetch(url, { headers });
-            if (!response.ok) throw new Error('Gagal mengunduh file.');
-
-            const blob = await response.blob();
+            // 2. Decode string base64 menjadi byte array
+            const byteCharacters = atob(fileData.content.replace(/\s/g, ''));
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            
+            // 3. Buat objek Blob lokal untuk memicu unduhan di browser bypass CORS
+            const blob = new Blob([byteArray], { type: 'application/octet-stream' });
             const blobUrl = window.URL.createObjectURL(blob);
             
             const a = document.createElement('a');
@@ -513,11 +411,10 @@
             document.body.appendChild(a);
             a.click();
             
-            // Cleanup
             document.body.removeChild(a);
             window.URL.revokeObjectURL(blobUrl);
         } catch (error) {
-            alert('Gagal mendownload file: ' + error.message);
+            alert('Gagal mendownload file: ' + error.message + '\nJika file Anda berukuran besar (>10MB), buka langsung via browser.');
         }
     }
 </script>
