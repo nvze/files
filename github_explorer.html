@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Repository File Downloader (Fixed)</title>
+    <title>GitHub Repository File Explorer & Uploader</title>
     <style>
         :root {
             --bg-color: #f6f8fa;
@@ -15,6 +15,8 @@
             --accent-color: #57606a;
             --folder-color: #54aeff;
             --file-color: #57606a;
+            --success-color: #1a7f37;
+            --success-hover: #116629;
         }
 
         * {
@@ -47,16 +49,13 @@
             margin-bottom: 1.5rem;
             padding-bottom: 0.5rem;
             border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
         }
 
         .config-panel {
             display: grid;
             grid-template-columns: 1fr;
             gap: 1rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             background-color: #f8f9fa;
             padding: 1rem;
             border-radius: 6px;
@@ -112,6 +111,34 @@
             background-color: var(--primary-hover);
         }
 
+        /* Upload Section Styling */
+        .upload-panel {
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: #f0f9ff;
+            border: 1px dashed #54aeff;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .upload-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-upload {
+            background-color: var(--success-color);
+        }
+
+        .btn-upload:hover {
+            background-color: var(--success-hover);
+        }
+
         .status-message {
             margin-top: 1rem;
             padding: 0.75rem 1rem;
@@ -132,6 +159,13 @@
             background-color: #ddf4ff;
             color: #0969da;
             border: 1px solid #b6e3ff;
+        }
+
+        .status-message.success {
+            display: block;
+            background-color: #dafbe1;
+            color: #1a7f37;
+            border: 1px solid #4ac26b;
         }
 
         .repo-browser {
@@ -201,11 +235,6 @@
             text-decoration: underline;
         }
 
-        .file-size {
-            font-size: 0.75rem;
-            color: var(--accent-color);
-        }
-
         .btn-download {
             background-color: #24292f;
             font-size: 0.75rem;
@@ -213,32 +242,27 @@
             border-radius: 4px;
             color: white;
             border: none;
+            cursor: pointer;
         }
 
         .btn-download:hover {
             background-color: #57606a;
-        }
-
-        .icon {
-            width: 16px;
-            height: 16px;
-            flex-shrink: 0;
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>GitHub Repo Explorer & Downloader</h1>
+    <h1>GitHub Repo Explorer, Downloader & Uploader</h1>
 
     <div class="config-panel">
         <div class="form-group full-width">
-            <label for="token">GitHub Token (Wajib jika Repo Private / menghindari Rate Limit)</label>
+            <label for="token">GitHub Personal Access Token (Wajib untuk Upload & Repo Private)</label>
             <input type="password" id="token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
         </div>
         <div class="form-group">
             <label for="username">Username / Owner Repo</label>
-            <input type="text" id="username" placeholder="Contoh: octocat">
+            <input type="text" id="username" placeholder="Contoh: nvze">
         </div>
         <div class="form-group">
             <label for="repo">Nama Repository</label>
@@ -246,6 +270,15 @@
         </div>
         <div class="form-group full-width">
             <button id="btn-load" onclick="loadRepository()">Muat Daftar File</button>
+        </div>
+    </div>
+
+    <div id="upload-panel-container" class="upload-panel" style="display: none;">
+        <label style="color: #0969da;">📤 Upload File ke Direktori Aktif:</label>
+        <div class="upload-controls">
+            <input type="file" id="file-input">
+            <input type="text" id="commit-message" placeholder="Pesan Commit (Opsional)" style="flex: 1; min-width: 200px;">
+            <button class="btn-upload" onclick="uploadFile()">Upload File</button>
         </div>
     </div>
 
@@ -271,6 +304,7 @@
         const repo = document.getElementById('repo').value.trim();
         const statusDiv = document.getElementById('status');
         const browserContainer = document.getElementById('browser-container');
+        const uploadPanel = document.getElementById('upload-panel-container');
 
         if (!owner || !repo) {
             showStatus('Mohon isi Username dan Nama Repo.', 'error');
@@ -295,12 +329,14 @@
             const data = await response.json();
             statusDiv.style.display = 'none';
             browserContainer.style.display = 'block';
+            uploadPanel.style.display = 'flex'; // Tampilkan panel upload
             
             renderBreadcrumb();
             renderFileList(data);
         } catch (error) {
             showStatus(error.message, 'error');
             browserContainer.style.display = 'none';
+            uploadPanel.style.display = 'none';
         }
     }
 
@@ -352,9 +388,12 @@
             container.appendChild(upRow);
         }
 
-        items.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
+        // Jika data berupa objek tunggal (bukan array), bungkus jadi array
+        const normalizedItems = Array.isArray(items) ? items : [items];
 
-        items.forEach(item => {
+        normalizedItems.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
+
+        normalizedItems.forEach(item => {
             const li = document.createElement('li');
             li.className = 'file-item';
             const isDir = item.type === 'dir';
@@ -374,34 +413,27 @@
         });
     }
 
-    // Perbaikan utama: Mengambil data konten file via API endpoint langsung menggunakan Token untuk membongkar Base64 Blob
     async function downloadFile(apiUrl, filename) {
         try {
             const headers = { 'Accept': 'application/vnd.github.v3+json' };
             if (cachedToken) { headers['Authorization'] = `token ${cachedToken}`; }
 
-            // 1. Ambil metadata file (termasuk konten dalam format base64 jika file < 12MB)
             const response = await fetch(apiUrl, { headers });
             if (!response.ok) throw new Error('Gagal menghubungi API GitHub.');
             
             const fileData = await response.json();
             
-            // Periksa jika file terlalu besar untuk API Contents biasa (>12MB biasanya diarahkan ke Git LFS/Blob API)
             if (!fileData.content && fileData.download_url) {
-                // Fallback menggunakan unduhan langsung jika tidak terikat enkripsi base64 API biasa
                 window.open(fileData.download_url, '_blank');
                 return;
             }
 
-            // 2. Decode string base64 menjadi byte array
             const byteCharacters = atob(fileData.content.replace(/\s/g, ''));
             const byteNumbers = new Array(byteCharacters.length);
             for (let i = 0; i < byteCharacters.length; i++) {
                 byteNumbers[i] = byteCharacters.charCodeAt(i);
             }
             const byteArray = new Uint8Array(byteNumbers);
-            
-            // 3. Buat objek Blob lokal untuk memicu unduhan di browser bypass CORS
             const blob = new Blob([byteArray], { type: 'application/octet-stream' });
             const blobUrl = window.URL.createObjectURL(blob);
             
@@ -414,8 +446,94 @@
             document.body.removeChild(a);
             window.URL.revokeObjectURL(blobUrl);
         } catch (error) {
-            alert('Gagal mendownload file: ' + error.message + '\nJika file Anda berukuran besar (>10MB), buka langsung via browser.');
+            alert('Gagal mendownload file: ' + error.message);
         }
+    }
+
+    // ================= FUNGSI BARU: UPLOAD FILE =================
+    async function uploadFile() {
+        const fileInput = document.getElementById('file-input');
+        let commitMessage = document.getElementById('commit-message').value.trim();
+        
+        if (!cachedToken) {
+            showStatus('Gagal: Token GitHub wajib diisi untuk melakukan unggah file!', 'error');
+            return;
+        }
+        if (fileInput.files.length === 0) {
+            showStatus('Gagal: Silakan pilih file terlebih dahulu.', 'error');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        if (!commitMessage) {
+            commitMessage = `Upload ${file.name} via GitHub Web Explorer`;
+        }
+
+        showStatus(`Sedang memproses dan mengunggah ${file.name}...`, 'loading');
+
+        // Membaca file dan mengubahnya menjadi format Base64 (Syarat API GitHub)
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async function () {
+            const base64Content = reader.result.split(',')[1]; // Ambil raw base64 string
+            
+            // Tentukan jalur file tujuan (Path)
+            const targetPath = currentPath ? `${currentPath}/${file.name}` : file.name;
+            const url = `https://api.github.com/repos/${cachedOwner}/${cachedRepo}/contents/${targetPath}`;
+
+            const headers = {
+                'Authorization': `token ${cachedToken}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            };
+
+            // Cek terlebih dahulu apakah file sudah ada, jika ada ambil SHA-nya untuk ditimpa (update)
+            let sha = null;
+            try {
+                const checkResponse = await fetch(url, { headers });
+                if (checkResponse.ok) {
+                    const existingFileData = await checkResponse.json();
+                    sha = existingFileData.sha; // Ambil SHA jika file duplikat/akan ditimpa
+                }
+            } catch (e) {
+                // Biarkan sha = null jika file baru
+            }
+
+            // Kerangka Request Body untuk API GitHub
+            const bodyData = {
+                message: commitMessage,
+                content: base64Content
+            };
+            if (sha) {
+                bodyData.sha = sha; // Menyertakan SHA jika prosesnya adalah 'replace/update' file
+            }
+
+            try {
+                const uploadResponse = await fetch(url, {
+                    method: 'PUT',
+                    headers: headers,
+                    body: JSON.stringify(bodyData)
+                });
+
+                if (uploadResponse.ok) {
+                    showStatus(`Berhasil! File "${file.name}" telah diunggah.`, 'success');
+                    fileInput.value = ''; // Reset input file
+                    document.getElementById('commit-message').value = ''; // Reset teks commit
+                    
+                    // Segarkan kembali daftar file di folder aktif saat ini
+                    setTimeout(() => { loadRepository(currentPath); }, 1500);
+                } else {
+                    const errData = await uploadResponse.json();
+                    throw new Error(errData.message || 'Respons API bermasalah.');
+                }
+            } catch (error) {
+                showStatus(`Gagal Mengunggah: ${error.message}`, 'error');
+            }
+        };
+
+        reader.onerror = function (error) {
+            showStatus('Gagal membaca file lokal komputer.', 'error');
+        };
     }
 </script>
 
