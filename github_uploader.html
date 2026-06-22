@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub File Uploader</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f6f8fa;
+            color: #24292f;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            border: 1px solid #d0d7de;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 540px;
+            padding: 32px;
+            box-shadow: 0 4px 12px rgba(140, 149, 159, 0.15);
+        }
+
+        h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        p.subtitle {
+            color: #57606a;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            background-color: #f6f8fa;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            border-color: #0969da;
+            background-color: #ffffff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3);
+        }
+
+        /* Custom File Input Container */
+        .file-upload-wrapper {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .file-select-box {
+            border: 2px dashed #0969da;
+            padding: 24px;
+            border-radius: 6px;
+            text-align: center;
+            background-color: #f0f7ff;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .file-select-box:hover {
+            background-color: #e2efff;
+        }
+
+        .file-select-box p {
+            font-size: 14px;
+            color: #0969da;
+            font-weight: 500;
+        }
+
+        #fileInput {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-info {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #24292f;
+            font-weight: 600;
+            text-align: center;
+            word-break: break-all;
+        }
+
+        /* Action Buttons */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            background-color: #2ea44f;
+            border: 1px solid rgba(27, 31, 36, 0.15);
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #2c974b;
+        }
+
+        .btn:disabled {
+            background-color: #94d3a2;
+            cursor: not-allowed;
+        }
+
+        /* Status Messages */
+        #statusMessage {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+            line-height: 1.5;
+        }
+
+        .status-success {
+            background-color: #dafbe1;
+            border: 1px solid #cee9d5;
+            color: #1a7f37;
+        }
+
+        .status-error {
+            background-color: #ffebe9;
+            border: 1px solid #ffcecb;
+            color: #cf222e;
+        }
+
+        .status-loading {
+            background-color: #fff8c5;
+            border: 1px solid #f8e3a1;
+            color: #9a6700;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Upload ke GitHub Repo</h2>
+    <p class="subtitle">Unggah file apa saja langsung ke repository GitHub Anda via API</p>
+
+    <!-- Kredensial Form -->
+    <div class="form-group">
+        <label for="githubToken">GitHub Personal Access Token (PAT)</label>
+        <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+    </div>
+
+    <div class="form-group">
+        <label for="username">Username GitHub</label>
+        <input type="text" id="username" placeholder="Contoh: imansantoso">
+    </div>
+
+    <div class="form-group">
+        <label for="repoName">Nama Repository</label>
+        <input type="text" id="repoName" placeholder="Contoh: nseNote">
+    </div>
+
+    <div class="form-group">
+        <label for="commitMessage">Pesan Commit (Opsional)</label>
+        <input type="text" id="commitMessage" placeholder="Upload file via web uploader" value="Upload file via web uploader">
+    </div>
+
+    <!-- Upload Section -->
+    <label>Pilih File</label>
+    <div class="file-upload-wrapper">
+        <div class="file-select-box">
+            <p id="uploadPrompt">Klik di sini untuk memilih atau drag file Anda</p>
+            <div id="fileInfo" class="file-info"></div>
+        </div>
+        <input type="file" id="fileInput">
+    </div>
+
+    <!-- Submit Button -->
+    <button type="button" id="submitBtn" class="btn" disabled>Submit ke GitHub</button>
+
+    <!-- Status Tampilan -->
+    <div id="statusMessage"></div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const uploadPrompt = document.getElementById('uploadPrompt');
+    const fileInfo = document.getElementById('fileInfo');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusMessage = document.getElementById('statusMessage');
+
+    let selectedFile = null;
+
+    // Listener saat file dipilih (Tombol Upload)
+    fileInput.addEventListener('change', function(e) {
+        if (e.target.files.length > 0) {
+            selectedFile = e.target.files[0];
+            uploadPrompt.style.display = 'none';
+            fileInfo.textContent = `File terpilih: ${selectedFile.name} (${(selectedFile.size / 1024).toFixed(2)} KB)`;
+            submitBtn.disabled = false;
+            showStatus('', ''); // Reset status
+        } else {
+            resetFileInput();
+        }
+    });
+
+    function resetFileInput() {
+        selectedFile = null;
+        uploadPrompt.style.display = 'block';
+        fileInfo.textContent = '';
+        submitBtn.disabled = true;
+    }
+
+    function showStatus(text, type) {
+        if (!text) {
+            statusMessage.style.display = 'none';
+            return;
+        }
+        statusMessage.className = '';
+        statusMessage.style.display = 'block';
+        statusMessage.textContent = text;
+        
+        if (type === 'success') statusMessage.classList.add('status-success');
+        if (type === 'error') statusMessage.classList.add('status-error');
+        if (type === 'loading') statusMessage.classList.add('status-loading');
+    }
+
+    // Listener saat tombol submit ditekan
+    submitBtn.addEventListener('click', async function() {
+        const token = document.getElementById('githubToken').value.trim();
+        const username = document.getElementById('username').value.trim();
+        const repo = document.getElementById('repoName').value.trim();
+        const commitMsg = document.getElementById('commitMessage').value.trim() || 'Upload file via web uploader';
+
+        if (!token || !username || !repo) {
+            showStatus('Harap isi semua kolom kredensial (Token, Username, dan Nama Repo)!', 'error');
+            return;
+        }
+
+        if (!selectedFile) {
+            showStatus('Harap pilih file terlebih dahulu!', 'error');
+            return;
+        }
+
+        showStatus('Sedang memproses dan mengunggah file...', 'loading');
+        submitBtn.disabled = true;
+
+        // Membaca file dan mengonversinya ke Base64 (wajib untuk GitHub API)
+        const reader = new FileReader();
+        reader.readAsDataURL(selectedFile);
+        
+        reader.onload = async function () {
+            // Mengambil data murni base64 dari DataURL
+            const base64Content = reader.result.split(',')[1];
+            const path = selectedFile.name; // Menyimpan di root repo dengan nama asli file
+            
+            // URL GitHub API untuk isi konten file
+            const url = `https://api.github.com/repos/${username}/${repo}/contents/${encodeURIComponent(path)}`;
+
+            try {
+                // 1. Cek apakah file sudah ada di repo untuk mendapatkan SHA (jika ingin overwrite/update)
+                let sha = null;
+                const checkResponse = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (checkResponse.ok) {
+                    const fileData = await checkResponse.json();
+                    sha = fileData.sha; // Ambil SHA jika file sudah ada
+                }
+
+                // 2. Lakukan request PUT untuk membuat atau memperbarui file
+                const bodyData = {
+                    message: commitMsg,
+                    content: base64Content
+                };
+                if (sha) {
+                    bodyData.sha = sha; // Menyertakan SHA jika prosesnya berupa pembaruan file
+                }
+
+                const uploadResponse = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify(bodyData)
+                });
+
+                if (uploadResponse.ok) {
+                    showStatus(`Berhasil! File "${selectedFile.name}" telah diunggah ke repository "${repo}".`, 'success');
+                    resetFileInput();
+                } else {
+                    const errorData = await uploadResponse.json();
+                    showStatus(`Gagal mengunggah: ${errorData.message || uploadResponse.statusText}`, 'error');
+                    submitBtn.disabled = false;
+                }
+
+            } catch (error) {
+                showStatus(`Terjadi kesalahan jaringan atau API: ${error.message}`, 'error');
+                submitBtn.disabled = false;
+            }
+        };
+
+        reader.onerror = function (error) {
+            showStatus('Gagal membaca file lokal.', 'error');
+            submitBtn.disabled = false;
+        };
+    });
+</script>
+
+</body>
+</html>
