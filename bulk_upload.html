@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Repository Manager (Explorer, Download, Upload, Delete)</title>
+    <style>
+        :root {
+            --bg-color: #f6f8fa;
+            --container-bg: #ffffff;
+            --text-color: #24292f;
+            --border-color: #d0d7de;
+            --primary-color: #0969da;
+            --primary-hover: #0c57d0;
+            --accent-color: #57606a;
+            --folder-color: #54aeff;
+            --file-color: #57606a;
+            --success-color: #1a7f37;
+            --success-hover: #116629;
+            --danger-color: #cf222e;
+            --danger-hover: #a61018;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 2rem 1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background-color: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .config-panel {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        @media (min-width: 768px) {
+            .config-panel {
+                grid-template-columns: 1fr 1fr;
+            }
+            .full-width {
+                grid-column: span 2;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        input {
+            padding: 0.45rem 0.75rem;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.3);
+        }
+
+        button {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #ffffff;
+            background-color: var(--primary-color);
+            border: 1px solid rgba(27, 31, 36, 0.15);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .upload-panel {
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background-color: #f0f9ff;
+            border: 1px dashed #54aeff;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .upload-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-upload {
+            background-color: var(--success-color);
+        }
+
+        .btn-upload:hover {
+            background-color: var(--success-hover);
+        }
+
+        .status-message {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .status-message.error {
+            display: block;
+            background-color: #ffebe9;
+            color: #cf222e;
+            border: 1px solid #ffc1c0;
+        }
+
+        .status-message.loading {
+            display: block;
+            background-color: #ddf4ff;
+            color: #0969da;
+            border: 1px solid #b6e3ff;
+        }
+
+        .status-message.success {
+            display: block;
+            background-color: #dafbe1;
+            color: #1a7f37;
+            border: 1px solid #4ac26b;
+        }
+
+        .repo-browser {
+            margin-top: 1.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .repo-header {
+            background-color: #f6f8fa;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .breadcrumb a {
+            color: var(--primary-color);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .file-list {
+            list-style: none;
+            background: #fff;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #e1e4e8;
+            font-size: 0.875rem;
+        }
+
+        .file-item:hover {
+            background-color: #f6f8fa;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-name.dir-link {
+            color: var(--primary-color);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .file-name.dir-link:hover {
+            text-decoration: underline;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .btn-download {
+            background-color: #24292f;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-download:hover {
+            background-color: #57606a;
+        }
+
+        .btn-delete {
+            background-color: var(--danger-color);
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-delete:hover {
+            background-color: var(--danger-hover);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>GitHub Repo Explorer, Downloader, Uploader & Delete</h1>
+
+    <div class="config-panel">
+        <div class="form-group full-width">
+            <label for="token">GitHub Personal Access Token (Wajib untuk Upload & Hapus File)</label>
+            <input type="password" id="token" value="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" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+        </div>
+        <div class="form-group">
+            <label for="username">Username / Owner Repo</label>
+            <input type="text" id="username" value="nvze" placeholder="Contoh: nvze">
+        </div>
+        <div class="form-group">
+            <label for="repo">Nama Repository</label>
+            <input type="text" id="repo" placeholder="Contoh: files">
+        </div>
+        <div class="form-group full-width">
+            <button id="btn-load" onclick="loadRepository()">Muat Daftar File</button>
+        </div>
+    </div>
+
+    <div id="upload-panel-container" class="upload-panel" style="display: none;">
+        <label style="color: #0969da;">📂 Upload File ke Direktori Aktif (Bisa pilih banyak):</label>
+        <div class="upload-controls">
+            <!-- Menambahkan atribut 'multiple' agar bisa upload banyak file -->
+            <input type="file" id="file-input" multiple>
+            <input type="text" id="commit-message" placeholder="Pesan Commit (Opsional)" style="flex: 1; min-width: 200px;">
+            <button class="btn-upload" onclick="uploadFile()">Upload File</button>
+        </div>
+    </div>
+
+    <div id="status" class="status-message"></div>
+
+    <div id="browser-container" style="display: none;" class="repo-browser">
+        <div class="repo-header">
+            <div class="breadcrumb" id="breadcrumb"></div>
+        </div>
+        <ul class="file-list" id="file-list-container"></ul>
+    </div>
+</div>
+
+<script>
+    let currentPath = '';
+    let cachedToken = '';
+    let cachedOwner = '';
+    let cachedRepo = '';
+
+    async function loadRepository(path = '') {
+        const token = document.getElementById('token').value.trim();
+        const owner = document.getElementById('username').value.trim();
+        const repo = document.getElementById('repo').value.trim();
+        const statusDiv = document.getElementById('status');
+        const browserContainer = document.getElementById('browser-container');
+        const uploadPanel = document.getElementById('upload-panel-container');
+
+        if (!owner || !repo) {
+            showStatus('Mohon isi Username dan Nama Repo.', 'error');
+            return;
+        }
+
+        cachedToken = token;
+        cachedOwner = owner;
+        cachedRepo = repo;
+        currentPath = path;
+
+        showStatus('Sedang mengambil data dari GitHub...', 'loading');
+        
+        let url = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+        const headers = { 'Accept': 'application/vnd.github.v3+json' };
+        if (token) { headers['Authorization'] = `token ${token}`; }
+
+        try {
+            const response = await fetch(url, { headers });
+            if (!response.ok) throw new Error(`Gagal memuat data (${response.status}). Periksa nama repo/token.`);
+            
+            const data = await response.json();
+            statusDiv.style.display = 'none';
+            browserContainer.style.display = 'block';
+            uploadPanel.style.display = 'flex';
+            
+            renderBreadcrumb();
+            renderFileList(data);
+        } catch (error) {
+            showStatus(error.message, 'error');
+            browserContainer.style.display = 'none';
+            uploadPanel.style.display = 'none';
+        }
+    }
+
+    function showStatus(message, type) {
+        const statusDiv = document.getElementById('status');
+        statusDiv.className = `status-message ${type}`;
+        statusDiv.innerText = message;
+    }
+
+    function renderBreadcrumb() {
+        const breadcrumb = document.getElementById('breadcrumb');
+        breadcrumb.innerHTML = '';
+        const rootLink = document.createElement('a');
+        rootLink.innerText = cachedRepo;
+        rootLink.onclick = () => loadRepository('');
+        breadcrumb.appendChild(rootLink);
+
+        if (currentPath) {
+            const parts = currentPath.split('/');
+            let accumulatedPath = '';
+            parts.forEach((part, index) => {
+                breadcrumb.appendChild(document.createTextNode(' / '));
+                accumulatedPath += (index === 0 ? part : '/' + part);
+                if (index === parts.length - 1) {
+                    const span = document.createElement('span');
+                    span.innerText = part;
+                    breadcrumb.appendChild(span);
+                } else {
+                    const dirLink = document.createElement('a');
+                    dirLink.innerText = part;
+                    const targetPath = accumulatedPath;
+                    dirLink.onclick = () => loadRepository(targetPath);
+                    breadcrumb.appendChild(dirLink);
+                }
+            });
+        }
+    }
+
+    function renderFileList(items) {
+        const container = document.getElementById('file-list-container');
+        container.innerHTML = '';
+
+        if (currentPath) {
+            const upRow = document.createElement('li');
+            upRow.className = 'file-item';
+            const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+            upRow.innerHTML = `<div class="file-info"><span class="file-name dir-link">📁 .. (Kembali)</span></div>`;
+            upRow.querySelector('.dir-link').onclick = () => loadRepository(parentPath);
+            container.appendChild(upRow);
+        }
+
+        const normalizedItems = Array.isArray(items) ? items : [items];
+        normalizedItems.sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'dir' ? -1 : 1));
+
+        normalizedItems.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'file-item';
+            const isDir = item.type === 'dir';
+            
+            let buttonsHtml = '';
+            if (!isDir) {
+                buttonsHtml = `
+                    <div class="action-buttons">
+                        <button class="btn-download" onclick="downloadFile('${item.url}', '${item.name}')">Download</button>
+                        <button class="btn-delete" onclick="deleteFile('${item.path}', '${item.sha}', '${item.name}')">Hapus</button>
+                    </div>
+                `;
+            }
+            
+            li.innerHTML = `
+                <div class="file-info">
+                    <span>${isDir ? '📁' : '📄'}</span>
+                    <span class="file-name ${isDir ? 'dir-link' : ''}">${item.name}</span>
+                </div>
+                ${buttonsHtml}
+            `;
+
+            if (isDir) {
+                li.querySelector('.dir-link').onclick = () => loadRepository(item.path);
+            }
+            container.appendChild(li);
+        });
+    }
+
+    async function downloadFile(apiUrl, filename) {
+        try {
+            const headers = { 'Accept': 'application/vnd.github.v3+json' };
+            if (cachedToken) { headers['Authorization'] = `token ${cachedToken}`; }
+
+            const response = await fetch(apiUrl, { headers });
+            if (!response.ok) throw new Error('Gagal menghubungi API GitHub.');
+            
+            const fileData = await response.json();
+            
+            if (!fileData.content && fileData.download_url) {
+                window.open(fileData.download_url, '_blank');
+                return;
+            }
+
+            const byteCharacters = atob(fileData.content.replace(/\s/g, ''));
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+            const blobUrl = window.URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            alert('Gagal mendownload file: ' + error.message);
+        }
+    }
+
+    // ================= FUNGSI UPLOAD BANYAK (BULK) =================
+    async function uploadFile() {
+        const fileInput = document.getElementById('file-input');
+        let baseCommitMessage = document.getElementById('commit-message').value.trim();
+        
+        if (!cachedToken) {
+            showStatus('Gagal: Token GitHub wajib diisi untuk melakukan unggah file!', 'error');
+            return;
+        }
+        if (fileInput.files.length === 0) {
+            showStatus('Gagal: Silakan pilih file terlebih dahulu.', 'error');
+            return;
+        }
+
+        const files = fileInput.files;
+        const totalFiles = files.length;
+        let successCount = 0;
+
+        for (let i = 0; i < totalFiles; i++) {
+            const file = files[i];
+            const commitMessage = baseCommitMessage ? `${baseCommitMessage} (${file.name})` : `Upload ${file.name} via GitHub Web Manager`;
+
+            showStatus(`Sedang memproses dan mengunggah file ${i + 1} dari ${totalFiles}: ${file.name}...`, 'loading');
+
+            // Mengubah FileReader menjadi Promise agar mendukung async/await dalam loop
+            const base64Content = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+            });
+
+            const targetPath = currentPath ? `${currentPath}/${file.name}` : file.name;
+            const url = `https://api.github.com/repos/${cachedOwner}/${cachedRepo}/contents/${targetPath}`;
+
+            const headers = {
+                'Authorization': `token ${cachedToken}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json'
+            };
+
+            let sha = null;
+            try {
+                const checkResponse = await fetch(url, { headers });
+                if (checkResponse.ok) {
+                    const existingFileData = await checkResponse.json();
+                    sha = existingFileData.sha;
+                }
+            } catch (e) {}
+
+            const bodyData = { message: commitMessage, content: base64Content };
+            if (sha) { bodyData.sha = sha; }
+
+            try {
+                const uploadResponse = await fetch(url, {
+                    method: 'PUT',
+                    headers: headers,
+                    body: JSON.stringify(bodyData)
+                });
+
+                if (uploadResponse.ok) {
+                    successCount++;
+                } else {
+                    const errData = await uploadResponse.json();
+                    throw new Error(errData.message || 'Respons API bermasalah.');
+                }
+            } catch (error) {
+                showStatus(`Gagal Mengunggah ${file.name}: ${error.message}`, 'error');
+                return; // Berhenti jika ada satu file yang gagal
+            }
+        }
+
+        showStatus(`Berhasil! ${successCount} file telah diunggah.`, 'success');
+        fileInput.value = '';
+        document.getElementById('commit-message').value = '';
+        setTimeout(() => { loadRepository(currentPath); }, 1500);
+    }
+
+    async function deleteFile(filePath, fileSha, filename) {
+        if (!cachedToken) {
+            alert('Gagal: Token GitHub wajib diisi untuk menghapus file!');
+            return;
+        }
+
+        const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus file "${filename}"?\nTindakan ini tidak dapat dibatalkan.`);
+        if (!konfirmasi) return;
+
+        showStatus(`Sedang menghapus file ${filename}...`, 'loading');
+
+        const url = `https://api.github.com/repos/${cachedOwner}/${cachedRepo}/contents/${filePath}`;
+        const headers = {
+            'Authorization': `token ${cachedToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+        };
+
+        const bodyData = {
+            message: `Menghapus file ${filename} via Web App`,
+            sha: fileSha
+        };
+
+        try {
+            const response = await fetch(url, {
+                method: 'DELETE',
+                headers: headers,
+                body: JSON.stringify(bodyData)
+            });
+
+            if (response.ok) {
+                showStatus(`Berhasil! File "${filename}" telah dihapus dari repository.`, 'success');
+                setTimeout(() => { loadRepository(currentPath); }, 1000);
+            } else {
+                const errData = await response.json();
+                throw new Error(errData.message || 'Gagal menghapus file dari GitHub.');
+            }
+        } catch (error) {
+            showStatus(`Gagal Menghapus Berkas: ${error.message}`, 'error');
+            alert('Gagal Menghapus Berkas: ' + error.message);
+        }
+    }
+</script>
+
+</body>
+</html>
